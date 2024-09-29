@@ -1,11 +1,15 @@
 <?php
 
+    require 'connection.php';
+
     if(!empty($_POST['name']) || !empty($_POST['username']) || !empty($_POST['email']) || !empty($_POST['password']) || !empty($_POST['password_confirm'])){
 
+        $db = dbConnect();
         $name = $_POST['name'];
         $username = $_POST['username'];
         $email = $_POST['email'];
         $password = $_POST['password'];
+        $r = 'user';
 
         if($password === $_POST['password_confirm']){
 
@@ -16,12 +20,29 @@
             $req->bindParam(':password', $hash_pass);
             $req->bindParam(':username', $username);
             $req->bindParam(':email', $email);
+            $req->bindParam(':role', $r);
            
             if ( $req->execute()) {
                 
+                $r = $db->prepare('SELECT * FROM user WHERE email = :email');
+                $r->bindParam(':email', $email);
+                $r->execute();
+                $user = $r->fetch(PDO::FETCH_ASSOC);
+
+                $req = $db->prepare('INSERT INTO compte(solde,user_id) VALUES (0, :user_id)');
+                $req->bindParam(':user_id', $user['id']);
+                $req->execute();
+
+                echo 'inscription reussie';
                 header('location: login.php');
+            } else {
+                echo "Erreur : " . $stmt->error;
             }
+    
+            $req->close();
             
+        }else{
+            echo "Les mots de passe ne correspondent pas.";
         }
 
     }
@@ -46,6 +67,8 @@
   <!-- Custom style CSS -->
   <link rel="stylesheet" href="assets/css/custom.css">
   <link rel='shortcut icon' type='image/x-icon' href='assets/img/favicon.ico' />
+  <!-- CSS de Toastr -->
+  <link rel="stylesheet" href="./assets/css/toastr.min.css">
 </head>
 
 <body>
@@ -99,14 +122,14 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <button type="submit" class="btn btn-primary btn-lg btn-block">
+                    <button type="submit" id="toastr-1" class="btn btn-primary btn-lg btn-block">
                       Register
                     </button>
                   </div>
                 </form>
               </div>
               <div class="mb-4 text-muted text-center">
-                Already Registered? <a href="auth-login.html">Login</a>
+                Already Registered? <a href="login.php">Login</a>
               </div>
             </div>
           </div>
@@ -125,6 +148,22 @@
   <script src="assets/js/scripts.js"></script>
   <!-- Custom JS File -->
   <script src="assets/js/custom.js"></script>
+   <!-- JS de Toastr -->
+   <script src="./assets/js/toastr.min.js"></script>
+   <script type="text/javascript">
+    // Exemple pour une notification de succès
+    toastr.success('Votre inscription a été réussie !', 'Succès', {timeOut: 5000});
+
+    // Exemple pour une notification d'erreur
+    toastr.error('Une erreur s\'est produite lors de la connexion.', 'Erreur', {timeOut: 5000});
+
+    // Exemple pour une notification d'information
+    toastr.info('Vous avez un nouveau message.', 'Information', {timeOut: 5000});
+
+    // Exemple pour une notification d'avertissement
+    toastr.warning('Attention, vérifiez vos informations.', 'Avertissement', {timeOut: 5000});
+</script>
+
 </body>
 
 

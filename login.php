@@ -1,31 +1,32 @@
 
 <?php
 
-    session_start();
-    require './connection.php';
+session_start();
+require './connection.php';
 
-    if($_SERVER['REQUEST_METHOD'] == 'POST')
-    {
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $email = $_POST['email']; 
+    $password = $_POST['password'];
+    $db = dbConnect(); 
 
-        $eamil = $_POST['email'];
-        $password = $_POST['password'];
-        $db = dbConnect();
+    $req = $db->prepare('SELECT * FROM user WHERE email = :email');
+    $req->bindParam(':email', $email);
+    $req->execute();
 
-        $req = $db->prepare('SELECT * FROM user WHERE email = :email');
-        $req->bindParam(':email', $email);
-        $req->execute();
+    $user = $req->fetch(PDO::FETCH_ASSOC);
+    
+    if ($user && password_verify($password, $user['password'])) {
 
-        $user = $req->fetch();
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['nom'] = $user['nom'];
+        $_SESSION['mail'] = $user['email'];
 
-        if($user && password_verify($password, $user['password'])){
-
-            $_SESSION['id'] = $user_id;
-            header('location: home.php');
-            exit();
-        } else {
-            echo "Nom d'utilisateur ou mot de passe incorrect.";
-        }
+        header('Location: home.php');  
+        exit();
+    } else {
+        echo "Email ou mot de passe incorrect.";
     }
+}
 ?>
 
 <!DOCTYPE html>
@@ -97,7 +98,7 @@
               </div>
             </div>
             <div class="mt-5 text-muted text-center">
-              Don't have an account? <a href="auth-register.html">Create One</a>
+              Don't have an account? <a href="register.php">Create One</a>
             </div>
           </div>
         </div>
